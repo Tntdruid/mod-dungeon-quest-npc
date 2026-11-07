@@ -10,10 +10,18 @@ Argent Guard Thaelrid in Blackfathom Deeps).
 
 ## Turn-in NPC menu
 
-- **Teleport me back to where I came from.** Dungeon finder groups go back to where the player was when the
-  dungeon started. Players who walked in are sent outside the dungeon portal. The player stays in the group.
-- **Teleport me back and leave the dungeon group.** Only shown in a dungeon finder group. Leaves the group so
-  the player can queue again right away.
+In a dungeon finder group:
+
+- **Teleport me back and leave the dungeon finder group.** Back to where the player was when the dungeon
+  started, and out of the group, so the player can queue again right away. Asks for confirmation if the
+  dungeon is not finished yet, because leaving early can give the Deserter debuff.
+- **Teleport me back, but stay in the group.** Same teleport, the player stays in the group.
+
+Otherwise:
+
+- **Teleport me back to where I came from.** Sends the player outside the dungeon portal.
+
+Teleporting is not possible in combat.
 
 ## Install
 

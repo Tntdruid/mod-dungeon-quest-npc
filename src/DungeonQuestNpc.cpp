@@ -2,6 +2,7 @@
  * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-AGPL3
  */
 
+#include "Chat.h"
 #include "CreatureScript.h"
 #include "Group.h"
 #include "LFGMgr.h"
@@ -26,11 +27,23 @@ public:
         if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
 
-        AddGossipItemFor(player, GOSSIP_ICON_TAXI, "Teleport me back to where I came from.", GOSSIP_SENDER_MAIN, ACTION_TELEPORT_OUT);
+        if (Group* group = GetLfgGroup(player))
+        {
+            // Leaving before the last boss is dead can give the dungeon finder deserter debuff
+            if (sLFGMgr->GetState(group->GetGUID()) == lfg::LFG_STATE_FINISHED_DUNGEON)
+                AddGossipItemFor(player, GOSSIP_ICON_TAXI, "Teleport me back and leave the dungeon finder group.",
+                    GOSSIP_SENDER_MAIN, ACTION_LEAVE_GROUP);
+            else
+                AddGossipItemFor(player, GOSSIP_ICON_TAXI, "Teleport me back and leave the dungeon finder group.",
+                    GOSSIP_SENDER_MAIN, ACTION_LEAVE_GROUP,
+                    "The dungeon is not finished yet, leaving can give you the Deserter debuff. Are you sure?", 0, false);
 
-        if (IsInLfgDungeon(player))
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Teleport me back and leave the dungeon group.", GOSSIP_SENDER_MAIN,
-                ACTION_LEAVE_GROUP, "You will leave your group. Are you sure?", 0, false);
+            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Teleport me back, but stay in the group.", GOSSIP_SENDER_MAIN,
+                ACTION_TELEPORT_OUT);
+        }
+        else
+            AddGossipItemFor(player, GOSSIP_ICON_TAXI, "Teleport me back to where I came from.", GOSSIP_SENDER_MAIN,
+                ACTION_TELEPORT_OUT);
 
         SendGossipMenuFor(player, player->GetGossipTextId(creature), creature->GetGUID());
         return true;
@@ -41,17 +54,19 @@ public:
         ClearGossipMenuFor(player);
         CloseGossipMenuFor(player);
 
+        if (player->IsInCombat())
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("You can't teleport while in combat.");
+            return true;
+        }
+
         switch (action)
         {
             case ACTION_TELEPORT_OUT:
                 TeleportOut(player);
                 break;
             case ACTION_LEAVE_GROUP:
-                // Leaving a dungeon finder group inside the dungeon already teleports the player to the entry point
-                if (Group* group = player->GetGroup())
-                    Player::RemoveFromGroup(group, player->GetGUID(), GROUP_REMOVEMETHOD_LEAVE);
-                if (!player->IsBeingTeleported() && player->GetMap()->IsDungeon())
-                    TeleportOut(player);
+                LeaveLfgGroup(player);
                 break;
             default:
                 break;
@@ -61,17 +76,20 @@ public:
     }
 
 private:
-    static bool IsInLfgDungeon(Player* player)
+    static Group* GetLfgGroup(Player* player)
     {
         Group* group = player->GetGroup();
-        return group && group->isLFGGroup() &&
-            sLFGMgr->inLfgDungeonMap(group->GetGUID(), player->GetMapId(), player->GetMap()->GetDifficulty());
+        if (group && group->isLFGGroup() &&
+            sLFGMgr->inLfgDungeonMap(group->GetGUID(), player->GetMapId(), player->GetMap()->GetDifficulty()))
+            return group;
+
+        return nullptr;
     }
 
     static void TeleportOut(Player* player)
     {
         // Dungeon finder: back to where the player was when the dungeon started
-        if (IsInLfgDungeon(player))
+        if (GetLfgGroup(player))
         {
             sLFGMgr->TeleportPlayer(player, true);
             return;
@@ -85,6 +103,24 @@ private:
         }
 
         player->TeleportToEntryPoint();
+    }
+
+    // Teleports first, so the player lands where the dungeon finder picked them up, then leaves the group.
+    // Leaving clears the dungeon finder state, so the player can queue again right away.
+    static void LeaveLfgGroup(Player* player)
+    {
+        Group* group = GetLfgGroup(player);
+        if (!group)
+        {
+            TeleportOut(player);
+            return;
+        }
+
+        sLFGMgr->TeleportPlayer(player, true);
+        Player::RemoveFromGroup(group, player->GetGUID(), GROUP_REMOVEMETHOD_LEAVE);
+
+        if (!player->IsBeingTeleported() && player->GetMap()->IsDungeon())
+            TeleportOut(player);
     }
 };
 
