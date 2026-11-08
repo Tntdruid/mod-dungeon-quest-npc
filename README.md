@@ -49,6 +49,8 @@ pick the fallback model used when a theme NPC is missing.
 
 - Givers do not offer quests that start from an item drop or from a scripted (escort/event) NPC inside the
   dungeon. The turn-in NPC accepts every quest of the dungeon.
+- The SQL also sets `AllowableRaces` in `quest_template` on quests that only one faction could use before, because
+  the original NPC only serves that faction. The dungeon NPCs are neutral and would otherwise offer them to everyone.
 - Holiday, daily/weekly and disabled quests are left out. Trial of the Champion has only daily quests, so it has
   no NPCs.
 - Turn-in NPCs for bosses that are spawned by an event are placed at a fixed point nearby. Their spawns have

@@ -1581,3 +1581,10 @@ DROP TEMPORARY TABLE `tmp_dungeon_quest_theme`;
 UPDATE `creature` SET `equipment_id` = 0 WHERE `guid` BETWEEN @GUID + 0 AND @GUID + 999 AND `id` BETWEEN @GIVER AND @ENDER + 99;
 UPDATE `creature` c JOIN `creature_equip_template` e ON e.`CreatureID` = c.`id` AND e.`ID` = 1
 SET c.`equipment_id` = 1 WHERE c.`guid` BETWEEN @GUID + 0 AND @GUID + 999 AND c.`id` BETWEEN @GIVER AND @ENDER + 99;
+
+-- Quests with no race limit that only one faction could use, because the original NPC only serves that faction.
+-- The dungeon NPCs are neutral, so without this both factions would be offered them.
+-- Alliance: Fire Hardened Mail | Replacement Phial | Put Her Down | Message to Maxwell | Forging the Mightstone | An Earnest Proposition | Just Compensation | Anthions Parting Words | Saving the Best for Last | Imprisoned in the Citadel
+UPDATE `quest_template` SET `AllowableRaces` = 1101 WHERE `ID` IN (1701, 3375, 4701, 5002, 8418, 8905, 8906, 8907, 8908, 8909, 8910, 8911, 8912, 8926, 8931, 8932, 8933, 8934, 8935, 8936, 8937, 8951, 8952, 8953, 8954, 8955, 8956, 8958, 8959, 8999, 9000, 9001, 9002, 9003, 9004, 9005, 9006, 9524, 10492, 10494, 10496, 10498);
+-- Horde: The Temple of AtalHakkar | Brutal Armor | Necklace Recovery | Necklace Recovery, Take 2 | Translating the Journal | Grark Lorkrub | Vivian Lagrave | Lost Thunderbrew Recipe | The Darkstone Tablet | Vivian Lagrave and the Darkstone Tablet | Operative Bijou | Bijous Reconnaissance Report | The Horde Needs Rugged Leather! | An Earnest Proposition | Just Compensation | Anthions Parting Words | Saving the Best for Last | The Path of the Adept | Ancient Evil | They Grow Up So Fast
+UPDATE `quest_template` SET `AllowableRaces` = 690 WHERE `ID` IN (1445, 1838, 2283, 2284, 2318, 2338, 4122, 4133, 4134, 4768, 4769, 4981, 4983, 8600, 8913, 8914, 8915, 8916, 8917, 8918, 8919, 8920, 8927, 8938, 8939, 8940, 8941, 8942, 8943, 8944, 8957, 9007, 9008, 9009, 9010, 9011, 9012, 9013, 9014, 9016, 9017, 9018, 9019, 9020, 9021, 9022, 9692, 10493, 10495, 10497, 10499, 10593, 13906);
